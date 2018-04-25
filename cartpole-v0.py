@@ -31,7 +31,7 @@ class Meme():
 env = gym.make('CartPole-v0')
 meme = Meme()
 
-for i_episode in range(200):
+for i_episode in range(2000):
     observation = env.reset()
     observations = []
     for t in range(1000):
@@ -47,14 +47,14 @@ for i_episode in range(200):
             break
 
     if len(observations) > 6:
-        [ meme.saveTraining(o,a) for (o,a) in observations]
+        [ meme.saveTraining(o[3:-3],a) for (o,a) in observations]
 
 print('learning...')
 meme.learn()
 
 print('show off...')
-observation = env.reset()
 
+observation = env.reset()
 while True:
     env.render()
     action = meme.getAction(observation)
