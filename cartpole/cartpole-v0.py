@@ -14,37 +14,40 @@ class Meme():
     def getAction(self, obs, currentOb):
         resultMove = []
         resultScore = []
+        predStates = []
 
-        for moves  in itertools.product([0,1], repeat=4):
-            o = obs[:-learnDepth]
+        for moves in itertools.product([0,1], repeat=4):
+            o = obs.copy()
             co = currentOb
-            for m in moves:
+            for idx, m in enumerate(moves):
                 o.append((co, m))
-                states = []
+                states = np.array([])
                 for j in range(learnDepth):
-                    (po,pa) = observations[i-1-j]
-                    state = np.insert(po, len(po), pa-0.5)
-                    states.append(state)
+                    (po,pa) = o[len(o)-1-j]
+                    states = np.insert(states, len(states), po)
+                    states = np.insert(states, len(states), pa-0.5)
 
                 co = self.model.predict(np.array([states]))[0]
+                if idx==0:
+                    predStates.append(co)
 
             resultMove.append(moves[0])
-            resultScore.append(self.score(o))
+            resultScore.append(self.score(co))
 
-        bestMove = resultMove[ np.argmin(np.array(resultScore)) ]
-        predictState = self.model.predict(np.array([ np.insert(ob, len(ob), bestMove-0.5) ]))[0]
+        bestMove = resultMove[ np.argmin(resultScore) ]
+        predictState = predStates[ np.argmin(resultScore) ]
         return (bestMove, predictState)
 
-    def score(self, ob):
-        return ob[0]*ob[0] + 50*ob[2]*ob[2]
+    def score(self, pred):
+        return pred[0]*pred[0] + 10*pred[2]*pred[2]
 
     def learn(self):
         model = Sequential()
-        model.add(Dense(512, activation='relu', input_shape=(5,),  kernel_initializer='random_uniform', bias_initializer='zeros'))
-        #model.add(Dense(512, activation='relu', input_shape=(4,),  kernel_initializer='random_uniform', bias_initializer='zeros'))
+        model.add(Dense(512, activation='relu', input_shape=(15,),  kernel_initializer='random_uniform', bias_initializer='zeros'))
+        model.add(Dense(512, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
         model.add(Dense(4))
 
-        model.compile(loss='mse', optimizer='adadelta', metrics=['accuracy'])
+        model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
         model.summary()
         self.model = model
 
@@ -53,7 +56,8 @@ class Meme():
         states = states.reshape((-1,5*learnDepth))
         targets = targets.reshape((-1,4))
 
-        self.model.fit(states, targets, shuffle=True, epochs=180, verbose=1)
+        print('total targets', len(targets))
+        self.model.fit(states, targets, shuffle=True, epochs=250, verbose=1)
 
         self.model.save('data/cartpole.model')
 
@@ -66,8 +70,8 @@ meme = Meme()
 def generate_data():
     states = bcolz.carray([], rootdir='data/cartpole_state', mode='w')
     targets = bcolz.carray([], rootdir='data/cartpole_target', mode='w', dtype='i')
-    sample = 1
-    while sample < 100:
+    sample = 0
+    while sample < 2000:
         observation = env.reset()
         observations = []
         for t in range(1000):
@@ -82,8 +86,8 @@ def generate_data():
         for i in range(learnDepth, len(observations)):
             for j in range(learnDepth):
                 (po,pa) = observations[i-1-j]
-                state = np.insert(po, len(po), pa-0.5)
-                states.append(state)
+                states.append(po)
+                states.append(pa-0.5)
 
             (co,_) = observations[i]
             targets.append(co)
@@ -93,8 +97,8 @@ def generate_data():
         sample += 1
 
 
-#print('generating learning data')
-#generate_data()
+print('generating learning data')
+generate_data()
 
 print('learning...')
 meme.learn()
@@ -110,7 +114,7 @@ while True:
         env.render()
 
         if len(obs) >= learnDepth:
-            (action, predict) = meme.getAction(observation[:-learnDepth])
+            (action, predict) = meme.getAction(obs[len(obs)-learnDepth:], observation)
         else:
             action = env.action_space.sample()
 
@@ -118,7 +122,7 @@ while True:
         observation, reward, done, info = env.step(action)
 
         if len(obs) > learnDepth:
-            print(action, observation, (observation - predict)*100/observation)
+            print(action, observation, predict, (observation - predict)*100/observation)
 
         if abs(observation[2])> 0.17:
             print('dangerous')
