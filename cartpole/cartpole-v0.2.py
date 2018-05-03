@@ -2,13 +2,12 @@ import gym
 
 import numpy as np
 from keras.models import Sequential, load_model
-from keras.layers.core import Dense
+from keras.layers.core import Dense, Dropout
 from keras.optimizers import SGD
 from keras.utils import np_utils
 import bcolz
 import itertools
 
-#exploring
 class MyModel():
     def __init__(self):
         self.states, self.targets = [], []
@@ -17,7 +16,10 @@ class MyModel():
     def buildDefaultModel(self):
         model = Sequential()
         model.add(Dense(512, activation='relu', input_shape=(4,)))
-        #model.add(Dense(512, activation='relu', input_shape=(4,),  kernel_initializer='random_uniform', bias_initializer='zeros'))
+        model.add(Dropout(0.2))
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(512))
         model.add(Dense(2, activation='softmax'))
         model.compile(loss='mse', optimizer='adadelta', metrics=['mse', 'accuracy'])
         model.summary()
@@ -28,7 +30,7 @@ class MyModel():
 
     def addExploring(self, state, target):
         self.statesExploring.append(state)
-        self.targetsExploring.append(state)
+        self.targetsExploring.append(target)
 
     def train(self):
         self.states.extend(self.statesExploring)
@@ -36,9 +38,13 @@ class MyModel():
         self.targets.extend(self.targetsExploring[:-3])
         self.targets.extend( [ 1 if x==0 else 0 for x in self.targetsExploring[-3:]] ) #switch the target of the last action
 
-        self.targets = self.targets[-1000:]
-        targets = np_utils.to_categorical(self.targts, 2)
-        states = self.states[-1000:]
+        self.statesExploring, self.targetsExploring = [], []
+        self.states = self.states[:4000]
+        self.targets = self.targets[:4000]
+
+        # self.targets = self.targets[-1000:]
+        targets = np_utils.to_categorical(self.targets, 2)
+        states = np.array(self.states).reshape(-1, 4)
 
         self.model.fit(states, targets, shuffle=True, epochs=3, verbose=1)
 
@@ -47,18 +53,22 @@ class MyModel():
 
 env = gym.make('CartPole-v0')
 
+model = MyModel()
+model.buildDefaultModel()
+
 while True:
     observation = env.reset()
-    model = MyModel()
-    model.buildDefaultModel()
     while True:
         env.render()
+
+        #exploring
         action = model.predict(observation)
         model.addExploring(observation, action)
         observation, reward, done, info = env.step(action)
 
         if done:
             print("Episode finished after {} timesteps".format(model.currentexploringDepth()))
+            #learn
             model.train()
             break
 
