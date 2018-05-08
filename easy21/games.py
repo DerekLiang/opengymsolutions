@@ -56,4 +56,15 @@ def step(state, action):
 
 values = np.zeros((21,21))
 visitedCount = np.zeros((21,21))
-action = np.zeros((21,21, 2))
+actions = np.zeros((21,21, 2))
+
+N0 = 100
+
+for i in range(100):
+    dealer, player = step((,))
+    allActionsForState = actions[dealer, player]
+    e = 100/(100 + visitedCount[dealer, player])
+    m = len(allActionsForState)
+    e/m + 1 - e
+
+    visitedCount[dealer, player] += 1
