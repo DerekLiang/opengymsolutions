@@ -19,23 +19,23 @@ def __drawACardByValue():
     card = __drawACard()
     return (card-10) if card > 10 else (-(card-10))
 
-def step(state, action):
+def step(state=(None,None), action=None):
     ''' state is (dealer card, player sum)
-        action is string of value: 'hit' or 'stick'
+        action is string of value: 0 or 1
         return a tuple (dealer card, player sum, isTerminated, reward)
     '''
     dealer, player = state
 
     if dealer is None and player is None:
-        return (__drawABlackCard(), __drawABlackCard(), False, 0)
+        return (__drawABlackCard(), __drawABlackCard())
 
-    if action == 'hit':
+    if action == 0: # 'hit'
         player += __drawACardByValue()
         if player>21 or player<1:
             return (dealer, player, True, -1)
         else:
-            return (dealer, player, False, None)
-    elif action == 'stick':
+            return (dealer, player, False, 0)
+    elif action == 1: #'stick'
         while True:
             dealer += __drawACardByValue()
             if dealer>=17:
@@ -56,15 +56,31 @@ def step(state, action):
 
 values = np.zeros((21,21))
 visitedCount = np.zeros((21,21))
-actions = np.zeros((21,21, 2))
+actions = np.zeros((21,21,2,21,21)) # this is state0 -> action0 -> state1 counter mapper.
 
 N0 = 100
 
 for i in range(100):
-    dealer, player = step((,))
-    allActionsForState = actions[dealer, player]
-    e = 100/(100 + visitedCount[dealer, player])
-    m = len(allActionsForState)
-    e/m + 1 - e
+    dealer, player = step() # start new hand
 
-    visitedCount[dealer, player] += 1
+    isTerminated = False
+
+    while not isTerminated:
+        e = 100/(100 + visitedCount[dealer, player])
+        if np.random.rand()<=e:
+            action = np.random.randint(2)
+        else:
+            action = np.argmax([ ((values*actions[21,21,x])/actions[21,21,x].sum()).sum() for x in range(2) ])
+
+        visitedCount[dealer, player] += 1
+
+        newDealer, newPlayer, isTerminated, reward =  step((dealer, player), action)
+
+        if not isTerminated:
+            actions[dealer, player, action, newDealer, newPlayer] += 1
+
+        values[dealer, player] += (reward - values[dealer, player])/visitedCount[dealer, player]
+
+        dealer, player = newDealer, newPlayer
+
+print(values)
