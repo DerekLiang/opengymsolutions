@@ -1,19 +1,9 @@
 import numpy as np
 
 DEBUG=0
-#assignment description at http://www0.cs.ucl.ac.uk/staff/d.silver/web/Teaching_files/Easy21-Johannes.pdf
-
-def __drawABlackCard():
-    '''black card are 1-11'''
-    return np.random.randint(1,11)
-
-def __drawARedCard():
-    '''black card are 11-20'''
-    return -np.random.randint(1,11)
 
 def __drawACard():
-    '''red card are minus 1-10 black card are 1-10'''
-    card =  __drawARedCard() if np.random.randint(0,3)==2 else __drawABlackCard()
+    card = np.random.randint(1,11)
     print('draw card:', card) if DEBUG else 0
     return card
 
@@ -39,11 +29,11 @@ def step(state=(None,None), action=None):
     dealer, player = state
 
     if dealer is None and player is None:
-        return (__drawABlackCard(), __drawABlackCard())
+        return (__drawACard(), __drawACard()+10)
 
     if action == 0: # 'hit'
         player += __drawACard()
-        if player>21 or player<1:
+        if player>21:
             return (dealer, 0, True, -1)
         else:
             return (dealer, player, False, 0)
@@ -62,8 +52,6 @@ def step(state=(None,None), action=None):
                     player = 0
                     reward = -1
                 return (dealer, player, True, reward)
-            elif dealer<1:
-                return (0, player, True, 1)
 
     assert('unknow action')
 
@@ -100,9 +88,13 @@ for i in range(50*1000):
         )) if DEBUG else 0
 
         dealer, player = newDealer, newPlayer
+
         if isTerminated:
             visitedCount[dealer, player] += 1
             values[dealer, player] += (reward - values[dealer, player])/visitedCount[dealer, player]
+
+
+
 
 __print(values[1:,1:][:10,:])
 
