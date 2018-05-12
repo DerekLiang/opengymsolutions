@@ -25,6 +25,7 @@ actionCount = np.zeros((10**4, 2, 10**4), dtype=np.int16)
 
 while True:
     observation = env.reset()
+    counter = 0
     while True:
         env.render()
 
@@ -36,7 +37,7 @@ while True:
             q = [ (values*actionCount[s + (x,)]).sum() for x in range(2) ]
             action = np.random.randint(2) if q[0]==q[1] else np.argmax(q)
 
-        observation, reward, done, info = env.step(action)
+        observation, reward, done, info, counter = env.step(action) + (counter+1,)
 
         visitedCount[s] += 1
         actionCount[ s + (action,) + s] += 1
@@ -47,5 +48,5 @@ while True:
             visitedCount[s] += 1
             values[s] += (reward -values[s])/visitedCount[s]
 
-            print("Episode finished after x timesteps")
+            print("Episode finished after {0} timesteps".format(counter))
             break
