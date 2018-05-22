@@ -8,7 +8,7 @@ Actions are not abstracted and can be represented as integer 0 or 1.
 
 Hash map is used to store states in the game as well as state-action-state counter in the state class for fast lookup.
 
-Backup method is used to update values of the states. Update order is based on the difference. The bigger difference is the earlier the update occurs. Update rate is set to 0.1 from original 0.01. With the above optimization, I see significant speed-up in training.
+Backup method is used to update values of all states. Update order is based on the difference of the updated value vs the original value. The bigger difference is the earlier the update occurs. Update rate is set to 0.1 from original 0.01. With the above optimization, I see significant speed-up in training.
 
 Every 10 explorations there will be 1 exploitation which shows the progress of the training. In the exploitation stage, no value will be updated and the main purpose is to see how good the current model is. In the exploration stage, you might not get the good results (i.e. longer episodes) because it will try the actions that haven't tried before. Also for the exploitation stage, the results will not always be improving, since the environment observations having uniform random value between ±0.05.
 
