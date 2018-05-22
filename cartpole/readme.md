@@ -1,5 +1,5 @@
 # The problem
-It is my solution (game.py) to the OpenAI Gym problem CartPole-v1 ( https://gym.openai.com/envs/CartPole-v1/). Characteristics of the environment can be described in the following wiki: https://github.com/openai/gym/wiki/CartPole-v0.
+It is my solution (games.py) to the OpenAI Gym problem CartPole-v1 ( https://gym.openai.com/envs/CartPole-v1/). Characteristics of the environment can be described in the following wiki: https://github.com/openai/gym/wiki/CartPole-v0.
 
 # Algorithm explanation
 Observation of the environment will be converted to internal representation as states which are represented as string for easy store and compare [see](https://github.com/DerekLiang/opengymsolutions/blob/2ddc49fbacbea3edc9fc89999743db2909897bdc/cartpole/games.py#L16).
