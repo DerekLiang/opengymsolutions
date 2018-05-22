@@ -14,7 +14,7 @@ def __drawARedCard():
 def __drawACard():
     '''red card are minus 1-10 black card are 1-10'''
     card =  __drawARedCard() if np.random.randint(0,3)==2 else __drawABlackCard()
-    print('draw card:', card) if DEBUG
+    print('draw card:', card) if DEBUG else 0
     return card
 
 def __print(array):
@@ -74,7 +74,7 @@ actionCount = np.zeros((22, 22, 2, 22, 22)) # this is state0 -> action0 -> state
 
 N0 = 16
 
-for i in range(5000*1000):
+for i in range(1*1000):
     dealer, player = step() # start new hand
 
     isTerminated = False
@@ -98,7 +98,7 @@ for i in range(5000*1000):
 
         print("({0}, {1}) =({7}, {8})=> ({2}, {3}), reward: {4}, value: {5} -> {6}".format(
             dealer, player, newDealer, newPlayer, reward, prevValue, values[dealer, player], action, actionMap
-        )) if DEBUG
+        )) if DEBUG else 0
 
         dealer, player = newDealer, newPlayer
 
