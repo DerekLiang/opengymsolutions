@@ -118,14 +118,16 @@ while True:
         print('learning... {0}'.format(counter))
         game.backup()
 
-        newObservation = env.reset()
         practice_reward = 0
-        for i in range(200):
-            env.render()
-            action = game.get_next_best_action(newObservation)
-            newObservation, reward, done, info = env.step([action])
-            practice_reward += reward
-        print('practice reward: {0:4.2f}'.format(practice_reward))
+        while practice_reward > -100 :
+            newObservation = env.reset()
+            practice_reward = 0
+            for i in range(200):
+                env.render()
+                action = game.get_next_best_action(newObservation)
+                newObservation, reward, done, info = env.step([action])
+                practice_reward += reward
+            print('practice reward: {0:4.2f}'.format(practice_reward))
 
 
 
