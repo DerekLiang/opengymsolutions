@@ -6,12 +6,12 @@ from scipy import *
 
 class Action():
     def __init__(self):
-        self.min, self.max, self.step = -2.0, 2.0, 0.1
+        self.min, self.max, self.step = -2.0, 2.0, 0.5
 
     def get_all_actions(self):
         s = self.min
-        while s <= self.max:
-            yield s
+        while s <= self.max + self.step - 0e-10:
+            yield round(s, 1)
             s += self.step
 
     def get_all_action_map(self):
@@ -24,7 +24,7 @@ class State():
     def __init__(self, observation, *args, **kwargs):
         self.__serialize_str = self.__internal_serialize_str(observation)
         self.visited_count = 0
-        self.value = 0
+        self.value = -16.2736044
         self.actions = Action().get_all_action_map()
         self.priority = 0
 
@@ -67,7 +67,7 @@ class Game():
             if h in self.states:
                 value += self.states[h].value * visited_count
                 count +=  visited_count
-        return value / count if count != 0 else 0
+        return value / count if count != 0 else -16.2736044
 
     def get_next_action(self, observation):
         state = self.find_state(observation)
@@ -77,12 +77,12 @@ class Game():
         state = self.find_state(observation)
         return self.get_next_action_by_state(state, N0=1e-10)
 
-    def get_next_action_by_state(self, state, N0=10):
+    def get_next_action_by_state(self, state, N0=1000):
         e = N0/(N0 + state.visited_count)
         if np.random.rand()>e or N0 == 1e-10:
             q = [ self.get_action_value(state, x) for x in self.actions ]
-            return self.actionCount[np.argmax(q)]
-        return self.actionCount[np.random.randint(len(self.actionCount))]
+            return self.actions[np.argmax(q)]
+        return self.actions[np.random.randint(len(self.actions))]
 
     def update_value(self, observation, action, newObservation, reward):
         state = self.find_state(observation)
@@ -101,10 +101,32 @@ class Game():
 
 
 env = gym.make('Pendulum-v0')
-observation = env.reset()
+game = Game()
+newObservation = env.reset()
+counter = 0
+
 while True:
-    env.render()
-    action = env.action_space.sample()
-    print(observation, action)
-    observation, reward, done, info = env.step(action)
+    # env.render()
+    action = game.get_next_action(newObservation)
+    newObservation, reward, done, info, counter, preObservation = env.step([action]) + (counter + 1, newObservation)
+    game.update_value(preObservation, action, newObservation, reward)
+
+    if counter % 200 + 1 == 200:
+        newObservation = env.reset()
+
+    if counter % 10000 + 1 == 10000:
+        print('learning... {0}'.format(counter))
+        game.backup()
+
+        newObservation = env.reset()
+        practice_reward = 0
+        for i in range(200):
+            env.render()
+            action = game.get_next_best_action(newObservation)
+            newObservation, reward, done, info = env.step([action])
+            practice_reward += reward
+        print('practice reward: {0:4.2f}'.format(practice_reward))
+
+
+
 
