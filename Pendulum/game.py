@@ -119,7 +119,7 @@ while True:
         game.backup()
 
         practice_reward = 0
-        while practice_reward > -100 :
+        while practice_reward > -250 :
             newObservation = env.reset()
             practice_reward = 0
             for i in range(200):
