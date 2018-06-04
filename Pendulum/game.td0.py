@@ -24,16 +24,16 @@ class State():
     def __init__(self, observation, *args, **kwargs):
         self.__serialize_str = self.__internal_serialize_str(observation)
         self.visited_count = 0
-        self.value = -16.2736044
+        self.value = -16.2736044 / 2
         self.actions = Action().get_all_action_map()
         self.priority = 0
 
     def __internal_serialize_str(self, observation):
         return "s {0:5.2f} {1:5.2f} {2:5.1f}".format(*observation)
 
-    def visit(self, action, observation, reward):
+    def visit(self, action, observation, observationValue, reward):
         self.visited_count += 1
-        self.value += (reward - self.value) / self.visited_count
+        self.value += (reward + 0.9*observationValue - self.value) / self.visited_count
         h = self.__internal_serialize_str(observation)
         observations = self.actions[action]
         observations[h] = observations[h] + 1 if h in observations else 1
@@ -86,24 +86,14 @@ class Game():
 
     def update_value(self, observation, action, newObservation, reward):
         state = self.find_state(observation)
-        state.visit(action, newObservation, reward)
-
-    def backup(self, loop = 2):
-        lr = 0.1
-        for i in range(loop):
-            for k in sorted(self.states, key=lambda x: self.states[x].priority):
-                state  = self.states[k]
-                action = self.get_next_action_by_state(state, N0=1e-10)
-                value  = self.get_action_value(state, action)
-                difference = value - state.value
-                state.value += difference * lr
-                state.priority = -abs(difference)
-
+        newState = self.find_state(newObservation)
+        state.visit(action, newObservation, newState.value, reward)
 
 env = gym.make('Pendulum-v0')
 game = Game()
 newObservation = env.reset()
 counter = 0
+targetSuccess = 10
 
 while True:
     # env.render()
@@ -115,19 +105,30 @@ while True:
         newObservation = env.reset()
 
     if counter % 10000 + 1 == 10000:
-        print('learning... {0}'.format(counter))
-        game.backup()
+        print('practice... {0}'.format(counter))
 
-        practice_reward = 0
-        while practice_reward > -250 :
+        successCount, failCount = 0, 0
+        while True:
             newObservation = env.reset()
             practice_reward = 0
-            for i in range(200):
+            for i in range(250):
                 env.render()
                 action = game.get_next_best_action(newObservation)
                 newObservation, reward, done, info = env.step([action])
-                practice_reward += reward
-            print('practice reward: {0:4.2f}'.format(practice_reward))
+                practice_reward += reward if i > 200 else 0
+
+            if practice_reward < -25:
+                failCount += 1
+            else:
+                successCount += 1
+
+            print('practice reward: {0:4.2f},  learned @ {1} {2}/{3}'.format(practice_reward, counter, successCount, successCount + failCount))
+
+            if successCount < targetSuccess and practice_reward < -25:
+                break
+
+
+
 
 
 
